@@ -1,0 +1,21 @@
+# Compiled output
+sim
+*.exe
+*.o
+*.out
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# CLion / JetBrains
+.idea/
+cmake-build-debug/
+cmake-build-release/
+CMakeFiles/
+CMakeCache.txt
