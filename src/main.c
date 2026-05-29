@@ -227,3 +227,123 @@ void load_program(const char* filename) { //filename depends on the name of the 
     fclose(f);
     printf("Loaded %d instructions.\n\n", total_instructions);
 }
+
+void stage_fetch() {
+    if (PC > INSTRUCTION_MEM_END) {  /*1024 limit*/
+        IF_reg.valid = 0;
+        return;
+    }
+
+    if (memory[PC] == 0 && PC >= total_instructions) { /*eg 5 instruction so mesh bast3ml whole memory*/
+     IF_reg.valid = 0;
+        return;
+    }
+
+    int fetched_pc = PC;
+    int32_t raw = memory[PC];
+    PC++;
+
+    IF_reg.raw_instruction = raw ;
+    IF_reg.pc_of_instruction = fetched_pc;
+    IF_reg.valid = 1;
+
+    printf("  [IF] PC=%d | Raw=0x%08X | Fetched\n",
+           fetched_pc, (uint32_t)raw); /*u yaani unsigned*/
+}
+
+void stage_decode() {
+    if (!ID_reg.valid) {
+        printf("  [ID] Empty\n");
+        return;
+    }
+
+    ID_reg.ID_cycles_done++;
+
+    if (ID_reg.ID_cycles_done == 1) {
+        DecodedInstruction d = decode_raw(ID_reg.raw_instruction, ID_reg.pc_of_instruction);
+        d.ID_cycles_done = 1;
+        ID_reg = d;
+        printf("  [ID] Cycle 1/2 - Decoding opcode=%d\n", ID_reg.opcode);
+        return;
+    }
+
+    //data hazards mi4 handled fa lw el register mi4 updated 7nsta5dem el value el 2adema
+    ID_reg.vr1= registers[ID_reg.r1];
+    ID_reg.vr2= registers[ID_reg.r2];
+    ID_reg.vr3= registers[ID_reg.r3];
+
+
+    printf("  [ID] Cycle 2/2 - Opcode=%d", ID_reg.opcode);
+
+    if (ID_reg.format == FORMAT_R)
+        printf(" | R1=R%d | R2=R%d(%d) | R3=R%d(%d) | SHAMT=%d\n",
+               ID_reg.r1, ID_reg.r2, ID_reg.vr2, ID_reg.r3, ID_reg.vr3, ID_reg.shamt);
+    else if (ID_reg.format == FORMAT_I)
+        printf(" | R1=R%d | R2=R%d(%d) | IMM=%d\n",
+               ID_reg.r1, ID_reg.r2, ID_reg.vr2, ID_reg.immediate);
+    else
+        printf(" | ADDR=%d\n", ID_reg.address);
+}
+
+int is_mem_active_this_cycle() {
+    return (MEM_reg.valid &&
+            (MEM_reg.opcode == OP_MOVR || MEM_reg.opcode == OP_MOVM));
+} /*3shan law mem active mesh hadkhol fetch*/
+
+
+int pipeline_done() {
+    if (clock_cycle == 1) return 0;
+
+    int fetch_done = (PC >= total_instructions);
+    int pipeline_empty = (!IF_reg.valid && !ID_reg.valid &&
+                          !EX_reg.valid && !MEM_reg.valid);
+    return fetch_done && pipeline_empty;
+}
+
+void run_pipeline() {
+
+    while (!pipeline_done()) {
+
+        printf("\n---------- Clock Cycle %d ----------\n", clock_cycle);
+
+
+        WB_reg = MEM_reg;
+        MEM_reg.valid = 0;
+
+        if (EX_reg.valid && EX_reg.EX_cycles_done == 2) {
+            MEM_reg = EX_reg;
+            EX_reg.valid = 0;
+        }
+
+        if (!EX_reg.valid && ID_reg.valid && ID_reg.ID_cycles_done == 2) {
+            EX_reg = ID_reg;
+            ID_reg.valid = 0;
+     }
+
+        /* ID gets IF only when ID is empty */
+        if (!ID_reg.valid && IF_reg.valid) {
+            ID_reg       = IF_reg;
+            IF_reg.valid = 0;
+        }
+
+
+        stage_writeback();
+        stage_memory();
+        stage_execute();
+        stage_decode();
+
+        if (clock_cycle % 2 == 1) { //odd
+            if (!is_mem_active_this_cycle())
+                stage_fetch();
+            else
+                printf("  [IF] Stalled (MEM using memory this cycle)\n");
+        } else {
+            if(!IF_reg.valid)
+                printf("  [IF] Empty\n");
+        }
+
+        clock_cycle++;
+
+    }
+}
+
