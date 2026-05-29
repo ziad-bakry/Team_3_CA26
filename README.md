@@ -6,9 +6,13 @@ German International University Berlin
 
 ## Team Members
 Yara Abdelrahman Gehad 19002198 T2
+
 Ziad Mohamed Bakry Agami 22001226 T2
+
 Jowayria Hatem 22001220 T1
+
 Kareem ElHamahmy 22001513 T2
+
 Malak Makar 22001279 T2
 
 ## Project Description
