@@ -403,5 +403,117 @@ void stage_writeback() {
 }
 
 
+void stage_execute()
+{
+    if (!EX_reg.valid) {
+        printf("  [EX] Empty\n");
+        return;
+    }
+
+    EX_reg.EX_cycles_done++;
+
+    DecodedInstruction d = EX_reg;
+
+    if (EX_reg.EX_cycles_done == 1)  {
+        printf("  [EX] Cycle 1/2 - Processing opcode=%d\n", d.opcode);
+        return;
+    }
+
+    printf("  [EX] Cycle 2/2 - ");
+
+    int branch_taken  = 0;
+    int branch_target = 0;
+
+    switch (d.opcode)
+    {
+    case OP_ADD:
+        EX_reg.result = d.vr2 + d.vr3;
+        printf("ADD: R%d(%d) + R%d(%d) = %d\n", d.r2, d.vr2, d.r3, d.vr3, EX_reg.result);
+        break;
+
+    case OP_SUB:
+        EX_reg.result = d.vr2 - d.vr3;
+        printf("SUB: R%d(%d) - R%d(%d) = %d\n", d.r2, d.vr2, d.r3, d.vr3, EX_reg.result);
+        break;
+
+    case OP_MUL:
+        EX_reg.result = d.vr2 * d.vr3;
+        printf("MUL: R%d(%d) * R%d(%d) = %d\n", d.r2, d.vr2, d.r3, d.vr3, EX_reg.result);
+        break;
+
+    case OP_AND:
+        EX_reg.result = d.vr2 & d.vr3;
+        printf("AND: R%d(%d) & R%d(%d) = %d\n", d.r2, d.vr2, d.r3, d.vr3, EX_reg.result);
+        break;
+
+    case OP_XORI:
+        EX_reg.result = d.vr2 ^ d.immediate;
+        printf("XORI: R%d(%d) ^ %d = %d\n", d.r2, d.vr2, d.immediate, EX_reg.result);
+        break;
+
+    case OP_JEQ:
+        if (d.vr1 == d.vr2)
+        {
+            branch_taken  = 1;
+            branch_target = d.pc_of_instruction + 1 + d.immediate;
+            printf("JEQ: R%d(%d) == R%d(%d) --> TAKEN --> jump to %d\n",
+                   d.r1, d.vr1,
+                   d.r2, d.vr2,
+                   branch_target);
+        } else {
+            printf("JEQ: R%d(%d) != R%d(%d) --> NOT TAKEN\n",
+                   d.r1, d.vr1,
+                   d.r2, d.vr2);
+        }
+        break;
+
+    case OP_MOVI:
+        EX_reg.result = d.immediate;
+        printf("MOVI: R%d = %d\n", d.r1, d.immediate);
+        break;
+
+    case OP_JMP:
+        branch_taken  = 1;
+        branch_target = (PC & 0xF0000000) | d.address;
+        printf("JMP: Unconditional jump to %d\n", branch_target);
+        break;
+
+    case OP_LSL:
+        EX_reg.result = (int32_t)((uint32_t)d.vr2 << d.shamt);
+        printf("LSL: R%d(%d) << %d = %d\n", d.r2, d.vr2, d.shamt, EX_reg.result);
+        break;
+
+    case OP_LSR:
+        EX_reg.result = (int32_t)((uint32_t)d.vr2 >> d.shamt);
+        printf("LSR: R%d(%d) >>> %d = %d\n", d.r2, d.vr2, d.shamt, EX_reg.result);
+        break;
+
+    case OP_MOVR:
+        EX_reg.mem_address = d.vr2 + d.immediate;
+        printf("MOVR: mem_address = R%d(%d) + %d = %d\n", d.r2, d.vr2, d.immediate, EX_reg.mem_address);
+        break;
+
+    case OP_MOVM:
+        EX_reg.mem_address = d.vr2 + d.immediate;
+        EX_reg.result      = d.vr1;
+        printf("MOVM: mem_address = R%d(%d) + %d = %d | value = R%d(%d)\n",
+               d.r2, d.vr2, d.immediate, EX_reg.mem_address, d.r1, d.vr1);
+        break;
+    default:
+        printf("ERROR: Unknown opcode %d reached execute stage\n",
+               d.opcode);
+        break;
+
+    }
+
+
+    if (branch_taken) {
+        PC = branch_target;
+        IF_reg.valid = 0;
+        ID_reg.valid = 0;
+        printf("  >> Branch taken: PC updated to %d | Pipeline flushed\n", PC);
+    }
+}
+
 
 
