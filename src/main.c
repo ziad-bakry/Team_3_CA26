@@ -284,3 +284,19 @@ void stage_decode() {
     else
         printf(" | ADDR=%d\n", ID_reg.address);
 }
+
+int is_mem_active_this_cycle() {
+    return (MEM_reg.valid &&
+            (MEM_reg.opcode == OP_MOVR || MEM_reg.opcode == OP_MOVM));
+} /*3shan law mem active mesh hadkhol fetch*/
+
+
+int pipeline_done() {
+    if (clock_cycle == 1) return 0;
+
+    int fetch_done = (PC >= total_instructions);
+    int pipeline_empty = (!IF_reg.valid && !ID_reg.valid &&
+                          !EX_reg.valid && !MEM_reg.valid);
+    return fetch_done && pipeline_empty;
+}
+
