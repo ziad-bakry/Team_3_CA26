@@ -235,7 +235,7 @@ void stage_fetch() {
     }
 
     if (memory[PC] == 0 && PC >= total_instructions) { /*eg 5 instruction so mesh bast3ml whole memory*/
-        IF_reg.valid = 0;
+     IF_reg.valid = 0;
         return;
     }
 
@@ -249,4 +249,38 @@ void stage_fetch() {
 
     printf("  [IF] PC=%d | Raw=0x%08X | Fetched\n",
            fetched_pc, (uint32_t)raw); /*u yaani unsigned*/
+}
+
+void stage_decode() {
+    if (!ID_reg.valid) {
+        printf("  [ID] Empty\n");
+        return;
+    }
+
+    ID_reg.ID_cycles_done++;
+
+    if (ID_reg.ID_cycles_done == 1) {
+        DecodedInstruction d = decode_raw(ID_reg.raw_instruction, ID_reg.pc_of_instruction);
+        d.ID_cycles_done = 1;
+        ID_reg = d;
+        printf("  [ID] Cycle 1/2 - Decoding opcode=%d\n", ID_reg.opcode);
+        return;
+    }
+
+    //data hazards mi4 handled fa lw el register mi4 updated 7nsta5dem el value el 2adema
+    ID_reg.vr1= registers[ID_reg.r1];
+    ID_reg.vr2= registers[ID_reg.r2];
+    ID_reg.vr3= registers[ID_reg.r3];
+
+
+    printf("  [ID] Cycle 2/2 - Opcode=%d", ID_reg.opcode);
+
+    if (ID_reg.format == FORMAT_R)
+        printf(" | R1=R%d | R2=R%d(%d) | R3=R%d(%d) | SHAMT=%d\n",
+               ID_reg.r1, ID_reg.r2, ID_reg.vr2, ID_reg.r3, ID_reg.vr3, ID_reg.shamt);
+    else if (ID_reg.format == FORMAT_I)
+        printf(" | R1=R%d | R2=R%d(%d) | IMM=%d\n",
+               ID_reg.r1, ID_reg.r2, ID_reg.vr2, ID_reg.immediate);
+    else
+        printf(" | ADDR=%d\n", ID_reg.address);
 }
