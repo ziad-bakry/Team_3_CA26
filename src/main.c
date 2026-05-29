@@ -347,3 +347,61 @@ void run_pipeline() {
     }
 }
 
+void stage_memory() {
+
+    if (!MEM_reg.valid) {
+        printf("  [MEM] Empty\n");
+        return;
+    }
+
+    DecodedInstruction d = MEM_reg;
+
+    if (d.opcode == OP_MOVR) {
+        int actual_addr = d.mem_address + DATA_MEM_START;
+        MEM_reg.result  = memory[actual_addr];
+        printf("  [MEM] MOVR: Load MEM[%d] = %d into R%d\n",
+               actual_addr, MEM_reg.result, d.r1);
+    }
+    else if (d.opcode == OP_MOVM) {
+        int actual_addr     = d.mem_address + DATA_MEM_START;
+        memory[actual_addr] = d.result; /*result calculated in execute movm*/
+        printf("  [MEM] MOVM: Store %d into MEM[%d]\n",
+               d.result, actual_addr);
+        printf("  >> MEM[%d] = %d\n", actual_addr, d.result);
+    }
+    else {
+
+        printf("  [MEM] No memory operation (opcode=%d)\n", d.opcode);
+    }
+}
+
+void stage_writeback() {
+
+    if (!WB_reg.valid) {
+        printf("  [WB] Empty\n");
+        return;
+    }
+
+    DecodedInstruction d = WB_reg;
+
+    int writes_register = (d.opcode == OP_ADD  || d.opcode == OP_SUB  ||
+                           d.opcode == OP_MUL  || d.opcode == OP_MOVI ||
+                           d.opcode == OP_AND  || d.opcode == OP_XORI ||
+                           d.opcode == OP_LSL  || d.opcode == OP_LSR  ||
+                           d.opcode == OP_MOVR);
+
+    if (writes_register) {
+        if (d.r1 == 0) {
+            printf("  [WB] Destination is R0 (zero register) --> no write\n");
+        } else {
+            registers[d.r1] = d.result;
+            printf("  [WB] R%d = %d\n", d.r1, d.result);
+        }
+    } else {
+        printf("  [WB] No register write (opcode=%d)\n", d.opcode);
+    }
+}
+
+
+
+
