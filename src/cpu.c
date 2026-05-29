@@ -29,7 +29,7 @@
 
 /* el struct de betmassel el instruction w kol el fields beta3etha
    ba3d ma te3melho decode mn el raw binary */
-   
+
 typedef struct {
     int valid;
     int32_t raw_instruction;
@@ -70,3 +70,41 @@ DecodedInstruction WB_reg;
 int clock_cycle;
 
 int total_instructions;
+
+
+DecodedInstruction decode_raw(int32_t raw, int pc_of_instr) {
+    DecodedInstruction d;
+    d.valid             = 1;
+    d.result            = 0;
+    d.mem_address       = 0;
+    d.ID_cycles_done = 0;
+    d.EX_cycles_done = 0;
+    d.pc_of_instruction = pc_of_instr;
+
+
+    d.opcode = (raw >> 28) & 0xF;
+    d.r1 = (raw >> 23) & 0x1F;  /* masking done in all but req in anyth other than opcode since andy values at their left */
+    d.r2 = (raw >> 18) & 0x1F;
+    d.r3 = (raw >> 13) & 0x1F;
+    d.shamt = raw & 0x1FFF; /* hena msh benetar n shift ashan aslan el shamt fl a5er fa no reason to shift*/
+
+    int32_t raw_imm = raw & 0x3FFFF;
+    if (raw_imm & (1 << 17))
+        d.immediate = raw_imm | 0xFFFC0000;
+    else
+        d.immediate = raw_imm;
+
+
+    d.address = raw & 0x0FFFFFFF;
+
+    // chooses the correct formate
+    if (d.opcode == OP_ADD || d.opcode == OP_SUB || d.opcode == OP_MUL ||
+        d.opcode == OP_AND || d.opcode == OP_LSL || d.opcode == OP_LSR)
+        d.format = FORMAT_R;
+    else if (d.opcode == OP_JMP)
+        d.format = FORMAT_J;
+    else
+        d.format = FORMAT_I;
+
+    return d;
+}
