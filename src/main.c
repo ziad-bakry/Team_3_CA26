@@ -300,3 +300,50 @@ int pipeline_done() {
     return fetch_done && pipeline_empty;
 }
 
+void run_pipeline() {
+
+    while (!pipeline_done()) {
+
+        printf("\n---------- Clock Cycle %d ----------\n", clock_cycle);
+
+
+        WB_reg = MEM_reg;
+        MEM_reg.valid = 0;
+
+        if (EX_reg.valid && EX_reg.EX_cycles_done == 2) {
+            MEM_reg = EX_reg;
+            EX_reg.valid = 0;
+        }
+
+        if (!EX_reg.valid && ID_reg.valid && ID_reg.ID_cycles_done == 2) {
+            EX_reg = ID_reg;
+            ID_reg.valid = 0;
+     }
+
+        /* ID gets IF only when ID is empty */
+        if (!ID_reg.valid && IF_reg.valid) {
+            ID_reg       = IF_reg;
+            IF_reg.valid = 0;
+        }
+
+
+        stage_writeback();
+        stage_memory();
+        stage_execute();
+        stage_decode();
+
+        if (clock_cycle % 2 == 1) { //odd
+            if (!is_mem_active_this_cycle())
+                stage_fetch();
+            else
+                printf("  [IF] Stalled (MEM using memory this cycle)\n");
+        } else {
+            if(!IF_reg.valid)
+                printf("  [IF] Empty\n");
+        }
+
+        clock_cycle++;
+
+    }
+}
+
