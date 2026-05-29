@@ -514,6 +514,39 @@ void stage_execute()
         printf("  >> Branch taken: PC updated to %d | Pipeline flushed\n", PC);
     }
 }
+void print_final_state() {
+    printf("\n");
+    printf("--------FINAL PROCESSOR STATE--------"" \n");
+
+    /* Print PC */
+    printf("\nPC = %d\n", PC);
+
+    printf("\n----Registers ----\n");
+    for (int i = 0; i < NUM_REGISTERS; i++) {
+        printf("R%d = %d\n", i, registers[i]);
+    }
+
+    printf("\n----Instruction Memory (addresses 0 to %d)----\n",
+           INSTRUCTION_MEM_END);
+    for (int i = 0; i <= INSTRUCTION_MEM_END; i++) {
+        if (memory[i] != 0) {
+            printf("MEM[%d] = 0x%08X (%d)\n",
+                   i, (uint32_t)memory[i], memory[i]);
+        }
+    }
+
+
+    printf("\n----Data Memory (addresses %d to %d)----\n",
+           DATA_MEM_START, MEMORY_SIZE - 1);
+    for (int i = DATA_MEM_START; i < MEMORY_SIZE; i++) {
+        if (memory[i] != 0) {
+            printf("MEM[%4d] = %d\n", i, memory[i]);
+        }
+    }
+
+    printf("\n----Simulation Complete: %d clock cycles----\n",
+           clock_cycle - 1);
+}
 
 
 
