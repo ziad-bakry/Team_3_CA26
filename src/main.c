@@ -199,3 +199,31 @@ int32_t encode_instruction(char* line) {
 
     return encoded;
 }
+
+void load_program(const char* filename) { //filename depends on the name of the actual instruction file
+    FILE* f = fopen(filename, "r");
+    if (!f) {
+        printf("ERROR: Cannot open file '%s'\n", filename);
+        exit(1);
+    }
+
+    char line[100];
+    int addr = 0;
+
+    while (fgets(line, sizeof(line), f)) {
+        if (line[0] == '\n' || line[0] == '\r' || line[0] == '\0') // byshel el empty lines bs
+            continue;
+
+        if (addr > INSTRUCTION_MEM_END) {
+            printf("ERROR: Too many instructions (max 1024)\n");
+            exit(1);
+        }
+
+        memory[addr] = encode_instruction(line);
+        addr++;
+        total_instructions++;
+    }
+
+    fclose(f);
+    printf("Loaded %d instructions.\n\n", total_instructions);
+}
