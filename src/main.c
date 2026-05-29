@@ -150,3 +150,52 @@ int32_t encode_instruction(char* line) {
         sscanf(line, "%s R%d R%d %d", mnemonic, &r1, &r2, &shamt);
         encoded = (OP_LSR << 28) | (r1 << 23) | (r2 << 18) | (shamt & 0x1FFF);
     }
+    /* I-FORMAT INSTRUCTIONS */
+
+    else if (strcmp(mnemonic, "MOVI") == 0) {
+        int r1;
+        int32_t imm;
+        sscanf(line, "%s R%d %d", mnemonic, &r1, &imm);
+        encoded = (OP_MOVI << 28) | (r1 << 23) | (0 << 18) | (imm & 0x3FFFF); /* bn enforce eno yeb2a 18 bits basss ashan law da5aly rakam kebyr maybawazsh el denya */
+    }
+    else if (strcmp(mnemonic, "JEQ") == 0) {
+        int r1, r2;
+        int32_t imm;
+        sscanf(line, "%s R%d R%d %d", mnemonic, &r1, &r2, &imm);
+        /* el immediate hena byeb2a el offset beta3 el branch */
+        encoded = (OP_JEQ << 28) | (r1 << 23) | (r2 << 18) | (imm & 0x3FFFF);
+    }
+    else if (strcmp(mnemonic, "XORI") == 0) {
+        int r1, r2;
+        int32_t imm;
+        sscanf(line, "%s R%d R%d %d", mnemonic, &r1, &r2, &imm);
+        encoded = (OP_XORI << 28) | (r1 << 23) | (r2 << 18) | (imm & 0x3FFFF);
+    }
+    else if (strcmp(mnemonic, "MOVR") == 0) {
+        int r1, r2;
+        int32_t imm;
+        sscanf(line, "%s R%d R%d %d", mnemonic, &r1, &r2, &imm);
+        encoded = (OP_MOVR << 28) | (r1 << 23) | (r2 << 18) | (imm & 0x3FFFF);
+    }
+    else if (strcmp(mnemonic, "MOVM") == 0) {
+        int r1, r2;
+        int32_t imm;
+        sscanf(line, "%s R%d R%d %d", mnemonic, &r1, &r2, &imm);
+        encoded = (OP_MOVM << 28) | (r1 << 23) | (r2 << 18) | (imm & 0x3FFFF);
+    }
+
+    /* J-FORMAT INSTRUCTIONS */
+
+    else if (strcmp(mnemonic, "JMP") == 0) {
+        int addr;
+        sscanf(line, "%s %d", mnemonic, &addr);
+        /* el address 28 bits - el 4 bits el fo2 begyebu mn el PC*/
+        encoded = (OP_JMP << 28) | (addr & 0x0FFFFFFF);
+    }
+    else {
+        printf("ERROR: Unknown instruction: %s\n", mnemonic);
+        exit(1);
+    }
+
+    return encoded;
+}
