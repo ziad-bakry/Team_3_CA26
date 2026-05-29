@@ -227,3 +227,26 @@ void load_program(const char* filename) { //filename depends on the name of the 
     fclose(f);
     printf("Loaded %d instructions.\n\n", total_instructions);
 }
+
+void stage_fetch() {
+    if (PC > INSTRUCTION_MEM_END) {  /*1024 limit*/
+        IF_reg.valid = 0;
+        return;
+    }
+
+    if (memory[PC] == 0 && PC >= total_instructions) { /*eg 5 instruction so mesh bast3ml whole memory*/
+        IF_reg.valid = 0;
+        return;
+    }
+
+    int fetched_pc = PC;
+    int32_t raw = memory[PC];
+    PC++;
+
+    IF_reg.raw_instruction = raw ;
+    IF_reg.pc_of_instruction = fetched_pc;
+    IF_reg.valid = 1;
+
+    printf("  [IF] PC=%d | Raw=0x%08X | Fetched\n",
+           fetched_pc, (uint32_t)raw); /*u yaani unsigned*/
+}
